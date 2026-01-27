@@ -1,3 +1,6 @@
+import { JobCard } from './components/JobCard';
+import { mockJobs } from './data/mockJobs';
+
 function App() {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -9,14 +12,17 @@ function App() {
           <p className="text-gray-600 mt-2">
             Software developer jobs across the Middle East & North Africa
           </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Showing {mockJobs.length} jobs
+          </p>
         </div>
       </header>
       
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-700">
-            Job listings coming soon...
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {mockJobs.map(job => (
+            <JobCard key={job.id} job={job} />
+          ))}
         </div>
       </main>
     </div>
