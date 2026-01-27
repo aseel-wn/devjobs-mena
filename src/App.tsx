@@ -4,6 +4,8 @@ import { FilterSidebar } from './components/FilterSidebar';
 //import { mockJobs } from './data/mockJobs';
 import { useState, useMemo, useEffect } from 'react';
 import type { Job } from './types/job';
+import { JobStats } from './components/JobStats';
+import { Footer } from './components/Footer';
 
 function App() {
   const [allJobs, setAllJobs] = useState<Job[]>([]);
@@ -28,6 +30,30 @@ function App() {
         setLoading(false);
       });
   }, []);
+
+  // Calculate stats
+const jobsByCountry = useMemo(() => {
+  const counts: Record<string, number> = {};
+  allJobs.forEach(job => {
+    counts[job.country] = (counts[job.country] || 0) + 1;
+  });
+  return counts;
+}, [allJobs]);
+
+const lastUpdated = useMemo(() => {
+  const now = new Date();
+  const hours = now.getHours();
+  
+  if (hours < 6) {
+    return 'Early this morning';
+  } else if (hours < 12) {
+    return 'This morning';
+  } else if (hours < 18) {
+    return 'This afternoon';
+  } else {
+    return 'This evening';
+  }
+}, []);
 
   const handleCountryChange = (country: string) => {
     setSelectedCountries((prev) =>
@@ -175,11 +201,21 @@ const filteredJobs = useMemo(() => {
                 </button>
               )}
             </div>
+            
           </div>
+          
         </div>
+        
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+
+
+        <div className="max-w-7xl mx-auto px-4 py-8">
+        <JobStats 
+        totalJobs={allJobs.length}
+        jobsByCountry={jobsByCountry}
+        lastUpdated={lastUpdated}
+        />
         <div className="flex gap-8">
           {/* Sidebar */}
           <aside className="w-64 flex-shrink-0">
@@ -206,18 +242,22 @@ const filteredJobs = useMemo(() => {
             </div>  
 
             {filteredJobs.length === 0 ? (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <p className="text-gray-600 text-lg mb-2">
-                  No jobs match your search or filters.
-                </p>
-                <button
-                  onClick={handleClearFilters}
-                  className="text-blue-600 hover:text-blue-800 font-semibold"
-                >
-                  Clear all filters
-                </button>
-              </div>
-            ) : (
+  <div className="bg-white rounded-lg shadow p-12 text-center">
+    <div className="text-6xl mb-4">🔍</div>
+    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+      No jobs found
+    </h3>
+    <p className="text-gray-600 mb-4">
+      Try adjusting your filters or search terms
+    </p>
+    <button
+      onClick={handleClearFilters}
+      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+    >
+      Clear all filters
+    </button>
+  </div>
+) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {filteredJobs.map((job) => (
                   <JobCard key={job.id} job={job} />
@@ -227,6 +267,7 @@ const filteredJobs = useMemo(() => {
           </main>
         </div>
       </div>
+       <Footer />
     </div>
   );
 }
