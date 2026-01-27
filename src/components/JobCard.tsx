@@ -4,20 +4,32 @@ interface JobCardProps {
   job: Job;
 }
 
+  function isNewJob(postedDate: string): boolean {
+  const newKeywords = ['1 day ago', '2 days ago', '3 days ago', 'today', 'yesterday'];
+  return newKeywords.some(keyword => postedDate.toLowerCase().includes(keyword));
+}
+
 export function JobCard({ job }: JobCardProps) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900">
-            {job.title}
-          </h3>
-          <p className="text-gray-600 mt-1">{job.company}</p>
-        </div>
-        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-          {job.source}
+<div className="flex justify-between items-start mb-4">
+  <div className="flex-1">
+    <div className="flex items-center gap-2 mb-1">
+      <h3 className="text-xl font-semibold text-gray-900">
+        {job.title}
+      </h3>
+      {isNewJob(job.postedDate) && (
+        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+          NEW
         </span>
-      </div>
+      )}
+    </div>
+    <p className="text-gray-600">{job.company}</p>
+  </div>
+  <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+    {job.source}
+  </span>
+</div>
       
       <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
         <span>📍 {job.location}</span>

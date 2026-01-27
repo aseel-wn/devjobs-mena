@@ -6,6 +6,7 @@ import { useState, useMemo, useEffect } from 'react';
 import type { Job } from './types/job';
 import { JobStats } from './components/JobStats';
 import { Footer } from './components/Footer';
+import { JobCardSkeleton } from './components/JobCardSkeleton';
 
 function App() {
   const [allJobs, setAllJobs] = useState<Job[]>([]);
@@ -15,6 +16,7 @@ function App() {
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [visaSponsorshipOnly, setVisaSponsorshipOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
 
   // Fetch jobs on mount
@@ -30,6 +32,19 @@ function App() {
         setLoading(false);
       });
   }, []);
+
+// Keyboard shortcuts
+useEffect(() => {
+  const handleKeyPress = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      handleClearFilters();
+      setShowFilters(false); // Also close mobile filters
+    }
+  };
+  
+  window.addEventListener('keydown', handleKeyPress);
+  return () => window.removeEventListener('keydown', handleKeyPress);
+}, []); // Empty dependency array is fine here
 
   // Calculate stats
 const jobsByCountry = useMemo(() => {
@@ -97,6 +112,7 @@ const filteredJobs = useMemo(() => {
       const matchesCompany = job.company.toLowerCase().includes(query);
       const matchesLocation = job.location.toLowerCase().includes(query);
       
+      
       if (!matchesTitle && !matchesCompany && !matchesLocation) {
         return false;
       }
@@ -143,16 +159,31 @@ const filteredJobs = useMemo(() => {
   visaSponsorshipOnly,
 ]);
 
-    if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading jobs...</p>
+if (loading) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">DevJobs MENA</h1>
+          <p className="text-gray-600 mt-2">
+            Software developer jobs across the Middle East & North Africa
+          </p>
+        </div>
+      </header>
+      
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-6">
+          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <JobCardSkeleton key={i} />
+          ))}
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -200,6 +231,7 @@ const filteredJobs = useMemo(() => {
                   </svg>
                 </button>
               )}
+              
             </div>
             
           </div>
@@ -218,19 +250,41 @@ const filteredJobs = useMemo(() => {
         />
         <div className="flex gap-8">
           {/* Sidebar */}
-          <aside className="w-64 flex-shrink-0">
-            <FilterSidebar
-              selectedCountries={selectedCountries}
-              selectedTechStack={selectedTechStack}
-              selectedLevels={selectedLevels}
-              visaSponsorshipOnly={visaSponsorshipOnly}
-              onCountryChange={handleCountryChange}
-              onTechStackChange={handleTechStackChange}
-              onLevelChange={handleLevelChange}
-              onVisaSponsorshipChange={setVisaSponsorshipOnly}
-              onClearFilters={handleClearFilters}
-            />
-          </aside>
+        {/* Mobile filter toggle button */}
+<div className="lg:hidden mb-4">
+  <button
+    onClick={() => setShowFilters(!showFilters)}
+    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+  >
+    <span className="font-semibold text-gray-900">
+      Filters {(selectedCountries.length + selectedTechStack.length + selectedLevels.length + (visaSponsorshipOnly ? 1 : 0)) > 0 && 
+        `(${selectedCountries.length + selectedTechStack.length + selectedLevels.length + (visaSponsorshipOnly ? 1 : 0)})`}
+    </span>
+    <svg
+      className={`w-5 h-5 transition-transform ${showFilters ? 'rotate-180' : ''}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+</div>
+
+{/* Sidebar - hidden on mobile unless toggled */}
+<aside className={`w-64 flex-shrink-0 ${showFilters ? 'block' : 'hidden'} lg:block mb-4 lg:mb-0`}>
+  <FilterSidebar
+    selectedCountries={selectedCountries}
+    selectedTechStack={selectedTechStack}
+    selectedLevels={selectedLevels}
+    visaSponsorshipOnly={visaSponsorshipOnly}
+    onCountryChange={handleCountryChange}
+    onTechStackChange={handleTechStackChange}
+    onLevelChange={handleLevelChange}
+    onVisaSponsorshipChange={setVisaSponsorshipOnly}
+    onClearFilters={handleClearFilters}
+  />
+</aside>
 
           {/* Main content */}
           <main className="flex-1">
@@ -259,10 +313,16 @@ const filteredJobs = useMemo(() => {
   </div>
 ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredJobs.map((job) => (
-                  <JobCard key={job.id} job={job} />
-                ))}
-              </div>
+  {filteredJobs.map((job, index) => (
+    <div
+      key={job.id}
+      className="animate-fadeIn"
+      style={{ animationDelay: `${index * 0.05}s` }}
+    >
+      <JobCard job={job} />
+    </div>
+  ))}
+</div>
             )}
           </main>
         </div>
