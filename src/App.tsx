@@ -8,6 +8,7 @@ function App() {
   const [selectedTechStack, setSelectedTechStack] = useState<string[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [visaSponsorshipOnly, setVisaSponsorshipOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleCountryChange = (country: string) => {
     setSelectedCountries((prev) =>
@@ -34,10 +35,23 @@ function App() {
     setSelectedTechStack([]);
     setSelectedLevels([]);
     setVisaSponsorshipOnly(false);
+    setSearchQuery('');
   };
 
   const filteredJobs = useMemo(() => {
     return mockJobs.filter((job) => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesTitle = job.title.toLowerCase().includes(query);
+        const matchesCompany = job.company.toLowerCase().includes(query);
+        const matchesLocation = job.location.toLowerCase().includes(query);
+        
+        if (!matchesTitle && !matchesCompany && !matchesLocation) {
+          return false;
+        }
+      }
+
       // Country filter
       if (
         selectedCountries.length > 0 &&
@@ -71,6 +85,7 @@ function App() {
       return true;
     });
   }, [
+    searchQuery,
     selectedCountries,
     selectedTechStack,
     selectedLevels,
@@ -85,6 +100,46 @@ function App() {
           <p className="text-gray-600 mt-2">
             Software developer jobs across the Middle East & North Africa
           </p>
+          
+          {/* Search Bar */}
+          <div className="mt-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by job title, company, or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <svg
+                className="absolute left-4 top-3.5 h-5 w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -116,9 +171,15 @@ function App() {
 
             {filteredJobs.length === 0 ? (
               <div className="bg-white rounded-lg shadow p-12 text-center">
-                <p className="text-gray-600 text-lg">
-                  No jobs match your filters. Try adjusting your criteria.
+                <p className="text-gray-600 text-lg mb-2">
+                  No jobs match your search or filters.
                 </p>
+                <button
+                  onClick={handleClearFilters}
+                  className="text-blue-600 hover:text-blue-800 font-semibold"
+                >
+                  Clear all filters
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
