@@ -1,14 +1,33 @@
-import { useState, useMemo } from 'react';
+
 import { JobCard } from './components/JobCard';
 import { FilterSidebar } from './components/FilterSidebar';
-import { mockJobs } from './data/mockJobs';
+//import { mockJobs } from './data/mockJobs';
+import { useState, useMemo, useEffect } from 'react';
+import type { Job } from './types/job';
 
 function App() {
+  const [allJobs, setAllJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [selectedTechStack, setSelectedTechStack] = useState<string[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [visaSponsorshipOnly, setVisaSponsorshipOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+
+  // Fetch jobs on mount
+  useEffect(() => {
+    fetch('/data/jobs.json')
+      .then(res => res.json())
+      .then(data => {
+        setAllJobs(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error loading jobs:', err);
+        setLoading(false);
+      });
+  }, []);
 
   const handleCountryChange = (country: string) => {
     setSelectedCountries((prev) =>
@@ -38,59 +57,76 @@ function App() {
     setSearchQuery('');
   };
 
-  const filteredJobs = useMemo(() => {
-    return mockJobs.filter((job) => {
-      // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchesTitle = job.title.toLowerCase().includes(query);
-        const matchesCompany = job.company.toLowerCase().includes(query);
-        const matchesLocation = job.location.toLowerCase().includes(query);
-        
-        if (!matchesTitle && !matchesCompany && !matchesLocation) {
-          return false;
-        }
-      }
+const filteredJobs = useMemo(() => {
+  // Don't filter if data hasn't loaded yet
+  if (allJobs.length === 0) {
+    return [];
+  }
 
-      // Country filter
-      if (
-        selectedCountries.length > 0 &&
-        !selectedCountries.includes(job.country)
-      ) {
+  return allJobs.filter((job) => {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesTitle = job.title.toLowerCase().includes(query);
+      const matchesCompany = job.company.toLowerCase().includes(query);
+      const matchesLocation = job.location.toLowerCase().includes(query);
+      
+      if (!matchesTitle && !matchesCompany && !matchesLocation) {
         return false;
       }
+    }
 
-      // Tech stack filter
-      if (selectedTechStack.length > 0) {
-        const hasMatchingTech = job.techStack?.some((tech) =>
-          selectedTechStack.includes(tech)
-        );
-        if (!hasMatchingTech) return false;
-      }
+    // Country filter
+    if (
+      selectedCountries.length > 0 &&
+      !selectedCountries.includes(job.country)
+    ) {
+      return false;
+    }
 
-      // Experience level filter
-      if (
-        selectedLevels.length > 0 &&
-        job.experienceLevel &&
-        !selectedLevels.includes(job.experienceLevel)
-      ) {
-        return false;
-      }
+    // Tech stack filter
+    if (selectedTechStack.length > 0) {
+      const hasMatchingTech = job.techStack?.some((tech) =>
+        selectedTechStack.includes(tech)
+      );
+      if (!hasMatchingTech) return false;
+    }
 
-      // Visa sponsorship filter
-      if (visaSponsorshipOnly && !job.visaSponsorship) {
-        return false;
-      }
+    // Experience level filter
+    if (
+      selectedLevels.length > 0 &&
+      job.experienceLevel &&
+      !selectedLevels.includes(job.experienceLevel)
+    ) {
+      return false;
+    }
 
-      return true;
-    });
-  }, [
-    searchQuery,
-    selectedCountries,
-    selectedTechStack,
-    selectedLevels,
-    visaSponsorshipOnly,
-  ]);
+    // Visa sponsorship filter
+    if (visaSponsorshipOnly && !job.visaSponsorship) {
+      return false;
+    }
+
+    return true;
+  });
+}, [
+  allJobs,
+  searchQuery,
+  selectedCountries,
+  selectedTechStack,
+  selectedLevels,
+  visaSponsorshipOnly,
+]);
+
+    if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading jobs...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -164,10 +200,10 @@ function App() {
           <main className="flex-1">
             <div className="mb-6">
               <p className="text-gray-700">
-                Showing <span className="font-semibold">{filteredJobs.length}</span> of{' '}
-                <span className="font-semibold">{mockJobs.length}</span> jobs
+              Showing <span className="font-semibold">{filteredJobs.length}</span> of{' '}
+              <span className="font-semibold">{allJobs.length}</span> jobs
               </p>
-            </div>
+            </div>  
 
             {filteredJobs.length === 0 ? (
               <div className="bg-white rounded-lg shadow p-12 text-center">
